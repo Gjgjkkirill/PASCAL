@@ -1,22 +1,11 @@
-﻿program basic;
-var
-  i, OperatorIndex: integer;
-  a, b: real;
-  str: string;
-  operands:= ['+','-','/','*','^'];
-
-// Checking if the string has operands inside
-function check(str: string): integer;
-begin
-  if Pos(operands[i],str) <> 0 then
-    Result:= Pos(operands[i],str)
-  else
-    Result:= 0
-end;
-
+﻿var
+  OperatorIndex: integer; // indexes
+  a, b: real; // the main working values for math
+  str: string; // input string
+  operands:= ['+','-','/','*','^']; // available operands
+label Cycle;
 // Executing math based on three parts of the equation
-function execute(a: real; b: real; Operand: string): real;
-begin
+function CalcTwoValues(a: real; b: real; Operand: string): real; begin
   case Operand of
     '-': Result:= a-b;
     '+': Result:= a+b;
@@ -26,41 +15,93 @@ begin
   end;
 end;
 
-// MAIN
-begin
-
-
-writeln('Для выхода введите "exit"');
-write('Введите выражение: '); readln(str);
-
-// Пока мы не написали exit
-while str <> 'exit' do begin
-
-  // Цикл по длине операндов  
-  for i:= 0 to operands.Length - 1 do begin
-    // Проверка на вхождение оператора в строку  
-    OperatorIndex:= check(str);
-    if OperatorIndex <> 0 then
-      begin
-        // Разделени строки на части до и после индекса оператора
-        a:= StrToReal(Copy(str, 1, OperatorIndex - 1));
-        b:= StrToReal(Copy(str, OperatorIndex + 1, str.Length));
-        // writeln(operands[i]);
-        
-        // Вывод результата вычисления
-        writeln('Результат: ', execute(a,b,operands[i]));
-        // Прерывание цикла
-        break
-      end;
-    // Если мы проверили последний индекс списка и не вышли из цикла
-    if i = operands.Length - 1 then
-      // Выводим ошибку
-      writeln('Неверно задано выражение!');
+function CheckValues(A: string; B: string; Operand: string): integer; begin
+  Result:= 0;
+  
+  // Exception for invalid variable A type
+  try 
+    StrToReal(A)
+  except on System.FormatException do begin
+      writeln('Critical Error | Недопустимый тип значения 1');
+      Result:= 1;
+      exit;
+    end;
   end;
   
-  // Повтор чтения переменной выражения
-  write('Введите выражение: '); readln(str);
+  // Exception for invalid variable B type
+  try 
+    StrToReal(B)
+  except on System.FormatException do begin
+      writeln('Critical Error | Недопустимый тип значения 2');
+      Result:= 1;
+      exit;
+    end;
+  end;
+  
+  // Exception for division by zero
+  if (Operand = '/') and (StrToInt(b) = 0) then begin
+    writeln('Error | Недопустимо деление на ноль');
+    Result:= 1;
+  end;
+end;
+
+// Executes main math algorithm and takes only two-valued string
+function Execute(Str: string): integer; begin
+  // Looping through all operands
+  for i: integer:= 0 to operands.Length - 1 do begin
+    
+    // Checks if the current operand is in the string
+    OperatorIndex:= Pos(operands[i],Str);
+    if OperatorIndex <> 0 then begin
+      
+        // Validify the values
+        if CheckValues(Copy(Str, 1, OperatorIndex - 1), Copy(Str, OperatorIndex + 1, Str.Length), operands[i]) = 1 then begin
+          Result:= 1;
+          exit;
+        end;
+        
+        // Turning them into real type
+        a:= StrToReal(Copy(Str, 1, OperatorIndex - 1));
+        b:= StrToReal(Copy(Str, OperatorIndex + 1, Str.Length));
+        
+        // Print the result
+        writeln('Результат: ', CalcTwoValues(a,b,operands[i]));
+        exit;
+      end;
+      
+    // If we went through all of the operand and none of them matched
+    if i = operands.Length - 1 then begin
+      // Raising error
+      writeln('Error | Неверно задано выражение');
+      Result:= 1
+    end;
+    
+  end;
 end;
 
 
-end.
+// ⬇
+begin //------------------------------------------------------------------------------------------------------------------------------------------
+// ⬆
+
+writeln('Для выхода введите "exit"');
+
+Cycle:
+write('Введите выражение: '); readln(str);
+
+// While user didnt enter exit
+if str <> 'exit' then begin
+  
+  // Main work
+  Execute(str);
+  
+  // Repeating the asking
+  goto Cycle;
+end;;
+
+// Ending message
+write('Спасибо, что воспользовались SC! До скорых встреч!');
+
+// ⬇
+end. //-------------------------------------------------------------------------------------------------------------------------------------------
+// ⬆
